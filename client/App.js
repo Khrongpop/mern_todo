@@ -11,15 +11,14 @@ import IntlWrapper from './modules/Intl/IntlWrapper';
 import routes from './routes';
 
 // Base stylesheet
+require('bootstrap/dist/css/bootstrap.min.css');
 require('./main.css');
 
 export default function App(props) {
   return (
     <Provider store={props.store}>
       <IntlWrapper>
-        <Router history={browserHistory}>
-          {routes}
-        </Router>
+        <Router history={browserHistory}>{routes}</Router>
       </IntlWrapper>
     </Provider>
   );

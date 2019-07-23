@@ -24,13 +24,15 @@ if (isDevMode) {
   // eslint-disable-next-line global-require
   const webpackHotMiddleware = require('webpack-hot-middleware');
   const compiler = webpack(config);
-  app.use(webpackDevMiddleware(compiler, {
-    noInfo: true,
-    publicPath: config.output.publicPath,
-    watchOptions: {
-      poll: 1000,
-    },
-  }));
+  app.use(
+    webpackDevMiddleware(compiler, {
+      noInfo: true,
+      publicPath: config.output.publicPath,
+      watchOptions: {
+        poll: 1000,
+      },
+    })
+  );
   app.use(webpackHotMiddleware(compiler));
 }
 
@@ -46,6 +48,7 @@ import Helmet from 'react-helmet';
 import routes from '../client/routes';
 import { fetchComponentData } from './util/fetchData';
 import posts from './routes/post.routes';
+import todos from './routes/todo.routes';
 import dummyData from './dummyData';
 import serverConfig from './config';
 
@@ -54,7 +57,7 @@ mongoose.Promise = global.Promise;
 
 // MongoDB Connection
 if (process.env.NODE_ENV !== 'test') {
-  mongoose.connect(serverConfig.mongoURL, (error) => {
+  mongoose.connect(serverConfig.mongoURL, error => {
     if (error) {
       console.error('Please make sure Mongodb is installed and running!'); // eslint-disable-line no-console
       throw error;
@@ -70,7 +73,7 @@ app.use(compression());
 app.use(bodyParser.json({ limit: '20mb' }));
 app.use(bodyParser.urlencoded({ limit: '20mb', extended: false }));
 app.use(Express.static(path.resolve(__dirname, '../dist/client')));
-app.use('/api', posts);
+app.use('/api', [posts, todos]);
 
 // Render Initial HTML
 const renderFullPage = (html, initialState) => {
@@ -98,10 +101,13 @@ const renderFullPage = (html, initialState) => {
         <div id="root">${process.env.NODE_ENV === 'production' ? html : `<div>${html}</div>`}</div>
         <script>
           window.__INITIAL_STATE__ = ${JSON.stringify(initialState)};
-          ${isProdMode ?
-          `//<![CDATA[
+          ${
+            isProdMode
+              ? `//<![CDATA[
           window.webpackManifest = ${JSON.stringify(chunkManifest)};
-          //]]>` : ''}
+          //]]>`
+              : ''
+          }
         </script>
         <script src='${isProdMode ? assetsManifest['/vendor.js'] : '/vendor.js'}'></script>
         <script src='${isProdMode ? assetsManifest['/app.js'] : '/app.js'}'></script>
@@ -112,8 +118,9 @@ const renderFullPage = (html, initialState) => {
 
 const renderError = err => {
   const softTab = '&#32;&#32;&#32;&#32;';
-  const errTrace = isProdMode ?
-    `:<br><br><pre style="color:red">${softTab}${err.stack.replace(/\n/g, `<br>${softTab}`)}</pre>` : '';
+  const errTrace = isProdMode
+    ? `:<br><br><pre style="color:red">${softTab}${err.stack.replace(/\n/g, `<br>${softTab}`)}</pre>`
+    : '';
   return renderFullPage(`Server Error${errTrace}`, {});
 };
 
@@ -150,12 +157,12 @@ app.use((req, res, next) => {
           .status(200)
           .end(renderFullPage(initialView, finalState));
       })
-      .catch((error) => next(error));
+      .catch(error => next(error));
   });
 });
 
 // start app
-app.listen(serverConfig.port, (error) => {
+app.listen(serverConfig.port, error => {
   if (!error) {
     console.log(`MERN is running on port: ${serverConfig.port}! Build something amazing!`); // eslint-disable-line
   }
